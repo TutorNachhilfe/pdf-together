@@ -1,0 +1,26 @@
+:root { color-scheme: light; --bg: #f8fafc; --ink: #0f172a; --accent: #2563eb; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+body { display: grid; grid-template-rows: auto auto auto 1fr; touch-action: none; }
+.topbar { padding: .5rem; border-bottom: 1px solid #dbeafe; display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; background: #fff; }
+.title { font-weight: 700; }
+.controls { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.badge { padding: .35rem .6rem; border-radius: 999px; background: #e2e8f0; font-size: .85rem; }
+.btn { border: 0; border-radius: .5rem; padding: .45rem .7rem; background: var(--accent); color: #fff; font-weight: 600; }
+.btn.active { background: #111827; }
+.upload { background: #fff; border-bottom: 1px solid #dbeafe; padding: .6rem; display: flex; gap: .6rem; align-items: center; }
+.upload.dragover { background: #dbeafe; }
+.upload-label { font-weight: 600; }
+.hint { color: #475569; font-size: .85rem; }
+.tabs { display: flex; gap: .35rem; padding: .4rem; overflow-x: auto; background: #eff6ff; }
+.tab { border: 1px solid #bfdbfe; padding: .35rem .65rem; border-radius: .5rem; background: #fff; white-space: nowrap; }
+.tab.active { border-color: #1d4ed8; background: #dbeafe; }
+.board { position: relative; min-height: 0; }
+.pdf, #drawCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pdf { border: 0; background: #fff; }
+#drawCanvas { touch-action: none; }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; color: #64748b; font-weight: 600; }
+@media (max-width: 900px) {
+  .btn { padding: .65rem .9rem; font-size: 1rem; }
+  .badge { font-size: 1rem; }
+}
