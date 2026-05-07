@@ -8,6 +8,10 @@
   }
 
   const wsUrl = `ws://${location.hostname}:8081/?token=${encodeURIComponent(token)}&role=${encodeURIComponent(roleHint)}`;
+  const MIN_LINE_WIDTH = 2;
+  const MAX_LINE_WIDTH = 6;
+  const PRESSURE_MULTIPLIER = 4;
+  const MAX_PAGE_NUMBER = 500;
   const rooms = new Map();
   let me = { id: '', role: 'student', color: '#2563eb' };
   let activeRoom = null;
@@ -34,6 +38,8 @@
 
   const ws = new WebSocket(wsUrl);
 
+  const buildPdfUrl = (roomId) => `/api/pdf/${encodeURIComponent(roomId)}?token=${encodeURIComponent(token)}`;
+
   const drawStroke = (stroke) => {
     const points = stroke.points || [];
     if (points.length < 2) return;
@@ -50,7 +56,10 @@
     for (let i = 1; i < points.length; i += 1) {
       const [x0, y0, p0] = points[i - 1];
       const [x1, y1, p1] = points[i];
-      ctx.lineWidth = Math.min(6, Math.max(2, (stroke.width || 2) + Math.max(p0, p1) * 4));
+      ctx.lineWidth = Math.min(
+        MAX_LINE_WIDTH,
+        Math.max(MIN_LINE_WIDTH, (stroke.width || MIN_LINE_WIDTH) + Math.max(p0, p1) * PRESSURE_MULTIPLIER),
+      );
       ctx.beginPath();
       ctx.moveTo(x0 * canvas.width, y0 * canvas.height);
       ctx.lineTo(x1 * canvas.width, y1 * canvas.height);
@@ -99,7 +108,7 @@
       return;
     }
     emptyState.style.display = 'none';
-    frame.src = `${room.pdf_url}#page=${currentPage}`;
+    frame.src = `${buildPdfUrl(room.room)}#page=${currentPage}`;
     pageLabel.textContent = `Seite ${currentPage}`;
     redraw();
   };
@@ -112,11 +121,19 @@
     if (me.role !== 'teacher' || !file) return;
     const fd = new FormData();
     fd.set('file', file);
-    await fetch(`/api/upload?token=${encodeURIComponent(token)}`, {
-      method: 'POST',
-      headers: { 'X-User-Id': me.id },
-      body: fd,
-    });
+    try {
+      const res = await fetch(`/api/upload?token=${encodeURIComponent(token)}`, {
+        method: 'POST',
+        headers: { 'X-User-Id': me.id },
+        body: fd,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Upload fehlgeschlagen (${res.status})`);
+      }
+    } catch (err) {
+      window.alert(`PDF-Upload fehlgeschlagen: ${err.message || err}`);
+    }
   };
 
   const toPoint = (ev) => {
@@ -177,7 +194,7 @@
 
   nextPageBtn.onclick = () => {
     if (!activeRoom) return;
-    currentPage += 1;
+    currentPage = Math.min(MAX_PAGE_NUMBER, currentPage + 1);
     ws.send(JSON.stringify({ type: 'page_change', room: activeRoom, page: currentPage }));
   };
 
@@ -191,7 +208,12 @@
   });
 
   ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
+    let msg;
+    try {
+      msg = JSON.parse(event.data);
+    } catch (_err) {
+      return;
+    }
 
     if (msg.type === 'welcome') {
       me = { id: msg.user_id, role: msg.role, color: msg.color };
@@ -215,7 +237,6 @@
       rooms.set(msg.room, {
         room: msg.room,
         filename: msg.filename,
-        pdf_url: msg.pdf_url,
         current_page: msg.page || 1,
         strokes: existing.strokes || {},
       });

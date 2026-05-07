@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+import ipaddress
 import json
 import os
 import random
@@ -26,22 +27,31 @@ def generate_token(length: int = 8) -> str:
     return "".join(random.choice(alphabet) for _ in range(length))
 
 
+def generate_id(length: int = 10) -> str:
+    alphabet = string.ascii_lowercase + string.digits
+    return "".join(random.choice(alphabet) for _ in range(length))
+
+
+def is_private_lan_ip(ip: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    private_networks = (
+        ipaddress.ip_network("10.0.0.0/8"),
+        ipaddress.ip_network("172.16.0.0/12"),
+        ipaddress.ip_network("192.168.0.0/16"),
+    )
+    return any(addr in net for net in private_networks)
+
+
 def detect_lan_ip() -> str:
     candidates: list[str] = []
     hostname = socket.gethostname()
     try:
         for item in socket.getaddrinfo(hostname, None, socket.AF_INET):
             ip = item[4][0]
-            if ip.startswith(("10.", "172.", "192.168.")):
-                candidates.append(ip)
-    except OSError:
-        pass
-
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            ip = s.getsockname()[0]
-            if ip.startswith(("10.", "172.", "192.168.")):
+            if is_private_lan_ip(ip):
                 candidates.append(ip)
     except OSError:
         pass
@@ -217,7 +227,7 @@ class AppHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.BAD_REQUEST, "multipart/form-data erwartet")
             return
 
-        boundary = ctype.split("boundary=", 1)[1].encode("utf-8")
+        boundary = ctype.split("boundary=", 1)[1].strip().strip('"').encode("utf-8")
         length = int(self.headers.get("Content-Length", "0"))
         raw = self.rfile.read(length)
 
@@ -280,7 +290,10 @@ async def ws_handler(ws: Any) -> None:
     requested_role = query.get("role", ["student"])[0]
     with STATE.lock:
         role = "teacher" if requested_role == "teacher" and STATE.teacher_id is None else "student"
-        client_id = "".join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+        used_ids = {client["id"] for client in STATE.clients.values()}
+        client_id = generate_id(12)
+        while client_id in used_ids:
+            client_id = generate_id(12)
         color = "#ff0000" if role == "teacher" else random_student_color()
         STATE.clients[ws] = {"id": client_id, "role": role, "color": color}
         if role == "teacher":
@@ -330,7 +343,7 @@ async def ws_handler(ws: Any) -> None:
                 if not room_id or not points:
                     continue
                 erase = bool(msg.get("erase", False))
-                stroke_id = "".join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
+                stroke_id = generate_id(12)
                 stroke = {
                     "id": stroke_id,
                     "type": "stroke",

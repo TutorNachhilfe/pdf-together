@@ -24,6 +24,7 @@ Beispielausgabe:
 - HTTP-Server auf `8080` + WebSocket-Server auf `8081`
 - Bindung nur auf erkannte LAN-IP
 - Session-Token als Zugriffsschutz
+- PDF-Anzeige über nativen Browser-PDF-Viewer (offline, ohne CDN)
 - Kollaboratives Zeichnen in Echtzeit
 - Lehrer rot, Schülerfarben zufällig
 - Undo (eigene Striche), Radiergummi, Seite löschen (nur Lehrer)
