@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>pdf-together</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="title">pdf-together</div>
+      <div class="controls">
+        <span id="roleBadge" class="badge"></span>
+        <span id="participants" class="badge">0 Schüler</span>
+        <button id="eraserBtn" class="btn">Radiergummi</button>
+        <button id="undoBtn" class="btn">Undo</button>
+        <button id="clearBtn" class="btn teacher-only">Seite löschen</button>
+        <button id="prevPageBtn" class="btn">◀</button>
+        <span id="pageLabel" class="badge">Seite 1</span>
+        <button id="nextPageBtn" class="btn">▶</button>
+      </div>
+    </header>
+
+    <section class="upload teacher-only" id="uploadArea">
+      <label class="upload-label" for="pdfFile">PDF hochladen</label>
+      <input id="pdfFile" type="file" accept="application/pdf" />
+      <span class="hint">oder PDF hierher ziehen</span>
+    </section>
+
+    <nav id="tabs" class="tabs"></nav>
+
+    <main id="board" class="board">
+      <iframe id="pdfFrame" title="PDF" class="pdf"></iframe>
+      <canvas id="drawCanvas"></canvas>
+      <div id="emptyState" class="empty">Lehrer lädt eine PDF hoch…</div>
+    </main>
+
+    <script src="/static/pdf.min.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
